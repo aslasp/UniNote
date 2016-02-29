@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1.0" />
+    <script type="text/javascript" src="js/LoginAjax.js"></script>
+    <title>home</title>
+
+    <!-- CSS  -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet">
+    <link href="css/materialize.css" type="text/css" rel="stylesheet"
+    media="screen,projection" />
+    <link href="css/style.css" type="text/css" rel="stylesheet"
+    media="screen,projection" />
+
+    <style type="text/css">      
+
+        html, body {
+            height: 100%;
+            /*background:url();
+            background-size:100% 100% ;
+            */
+        }             
+
+        #container {
+            min-height: 50%; /*使内容高度和body一样*/
+            margin-bottom: 70px; /*向上缩减70像素，不至于footer超出屏幕可视范围*/
+        }       
+      
+        label {
+            margin: 5px;
+        }
+
+        .slider{
+            height:610px;
+        }
+
+        img{
+            height: 610px;
+        }
+    </style>
+    <script src="js/cookie.js"></script>
+    <script src="js/writeHTML.js"></script>
+    <script src="js/xmlhttp.js"></script>
+
+    <script>
+    function search(){
+        var keyword=$("input[name='keyword']").val();
+        var type=$("input[name='type'][checked]").val();
+        var nickname;
+        var login=check_cookie();
+        if(!login){
+            nickname="undefined";
+        }else{
+            nickname=$("#user-name").attr("title");
+        }
+        var xmlhttp=getXmlHttp();
+        if(xmlhttp!=null){
+            xmlhttp.onreadystatechange=function(){onSearchResponse(xmlhttp)};
+            xmlhttp.open("GET","/UniNote/SearchServlet?keyword="+keyword+"&type="+type+"&nickname="+nickname,true);
+            xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xmlhttp.send();
+        }else{
+            alert("Your browser does not support XMLHttpRequest");
+        }
+    }
+
+    function onSearchResponse(xmlhttp){
+        window.href="/UniNote/list.html";
+        if (xmlhttp.readyState==4 && xmlhttp.status==200){       
+            var text=xmlhttp.responseText;
+            try{
+                var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                xmlDoc.async="false";
+                xmlDoc.loadXML(text);
+            }catch(e){
+                try{
+                    var parser=new DOMParser();
+                    xmlDoc=parser.parseFromString(text,"text/xml");
+                }catch(e) {
+                    alert(e.message);
+                }
+            }
+            var file_elements=xmlDoc.getElementsByTagName("document"); 
+            var txt=write_document_list(file_elements);
+            $("#filelist").html(txt);
+        }
+    }
+
+    function func(){
+        var window_height=$(window).height();
+        var header_height=$("header").outerHeight();
+        var height=window_height-header_height;
+        $(".slider").css("height",height);
+        $(".slides").css("height",height);
+        $("img").css("height",height);
+    }
+
+    </script>
+
+</head>
+<body onload="write_header();func()" onresize="func()">
+    <header></header>
+    <div class="main" id="div1">
+        <div class="slider">
+            <ul class="slides">
+                <li>
+                    <img src="images/back1.png">
+                    <!-- random image -->
+                    <div class="caption center-align">
+                        <h3>uniNOTE 优记</h3>
+                        <h5 class="light grey-text text-lighten-3">面向全国高校的课程分类式文库</h5>
+                    </div>
+                </li>
+                <li>
+                    <img src="images/back2.jpg">
+                    <!-- random image -->
+                    <div class="caption right-align">
+                        <h3>uniNOTE 优记</h3>
+                        <h5 class="light grey-text text-lighten-3">与万千学子分享你的笔记、知识和经验</h5>
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+   
+
+    <!--  javaScripts -->
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="js/materialize.js"></script>
+
+</body>
+</html>

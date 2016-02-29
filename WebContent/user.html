@@ -1,0 +1,197 @@
+<!DOCTYPE <!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+	<title>user</title>
+
+	<!-- CSS  -->
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+	<link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+	<style type="text/css">
+	    .row{
+	        margin-left: 9%;
+	        margin-right: 9%;
+	    }
+	    .main{
+            margin-top: 40px;
+	    }
+	    h4{
+	    	color: #26A69A;
+	    }
+	    #user-info-container{
+	    	display: table;
+	    	border-spacing: 10px;
+	    }
+	    .table-row{
+	    	display: table-row;
+	    }
+	    .property{
+	    	display: table-cell;
+	    }
+	    .value{
+	    	display: table-cell;
+	    }
+	    img{
+		max-width: 42px;
+		padding: 0;
+	}
+	</style>
+	<script src="js/jQuery.js"></script>
+    <script src="js/xmlhttp.js"></script>
+	<script src="js/writeHTML.js"></script>
+	<script src="js/ChangeUserInfoAjax.js"></script>
+	<script src="js/ChangePWAjax.js"></script>
+	<script src="js/cookie.js"></script>
+	<script src="js/materialize.js"></script>
+	<script src="js/LoginAjax.js"></script>
+
+	<script type="text/javascript">
+
+    	function get_user_info(){
+    		var nickname=$("#user-name").attr("title");
+    		var xmlhttp=getXmlHttp();
+    		if(xmlhttp!=null){
+            	xmlhttp.onreadystatechange=function(){onUserInfoResponse(xmlhttp)};
+                xmlhttp.open("GET","UserInfoServlet?nickname="+nickname,true);    
+                xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');        
+                xmlhttp.send();                              
+            }else{
+            	alert("Your browser does not support XMLHttpRequest.");
+            }
+    	}
+
+    	function get_user_upload_docs(){
+    		var nickname=$("#user-name").attr("title");
+            var xmlhttp=getXmlHttp();
+            if(xmlhttp!=null){
+                xmlhttp.onreadystatechange=function(){onFileListResponse(xmlhttp,"upload")};
+                xmlhttp.open("GET","UserUpLoadServlet?nickname="+nickname,true);   
+                xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');   
+                xmlhttp.send();                             
+            }else{
+            	alert("Your browser does not support XMLHttpRequest.");
+            }
+    	}
+         
+        function get_user_download_docs(){
+        	var nickname=$("#user-name").attr("title");
+            var xmlhttp=getXmlHttp();
+            if(xmlhttp!=null){
+                xmlhttp.onreadystatechange=function(){onFileListResponse(xmlhttp,"download")};
+                xmlhttp.open("GET","UserDownloadServlet?nickname="+nickname,true);            
+                xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');       
+                xmlhttp.send();                               
+            }else{
+            	alert("Your browser does not support XMLHttpRequest.");
+            }
+    	}
+
+    	function get_user_collect_docs(){
+    		var nickname=$("#user-name").attr("title");
+            var xmlhttp=getXmlHttp();
+            if(xmlhttp!=null){
+                xmlhttp.onreadystatechange=function(){onFileListResponse(xmlhttp,"collect")};
+                xmlhttp.open("GET","UserCollectionsServlet?nickname="+nickname,true); 
+                xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');                 
+                xmlhttp.send();                               
+            }else{
+            	alert("Your browser does not support XMLHttpRequest.");
+            }
+    	}    	
+
+    	function onFileListResponse(xmlhttp,type){
+  	   	    if (xmlhttp.readyState==4 && xmlhttp.status==200){
+                var text=xmlhttp.responseText;
+                try{
+                    var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                    xmlDoc.async="false";
+                    xmlDoc.loadXML(text);
+                }catch(e){
+                    try{
+                        var parser=new DOMParser();
+                        xmlDoc=parser.parseFromString(text,"text/xml");
+                    }catch(e) {
+                	    alert(e.message);
+                    }
+                }  
+                var file_elements=xmlDoc.getElementsByTagName("document"); 
+                if(type=="upload"){
+                	if(file_elements.length==0){
+                		$("#content-on-right").html("<p>您暂无上传的文件</p>");
+                    }else{
+                    	var txt=write_user_upload_files(file_elements);
+                    	$("#content-on-right").html(txt);
+                    }
+                }else if(type=="download"){
+                	if(file_elements.length==0){
+                		$("#content-on-right").html("<p>您暂无下载的文件</p>");
+                    }else{
+                    	var txt=write_user_download_files(file_elements);
+                    	$("#content-on-right").html(txt);
+                    }      
+                }else if(type=="collect"){
+                	if(file_elements.length==0){
+                		$("#content-on-right").html("<p>您暂无收藏的文件</p>");
+                    }else{
+                    	var txt=write_user_collect_files(file_elements);
+                    	$("#content-on-right").html(txt);
+                    }
+                }
+            }
+	    }
+
+	    function onUserInfoResponse(xmlhttp){
+  	   	    if (xmlhttp.readyState==4 && xmlhttp.status==200){
+                var text=xmlhttp.responseText;
+                try{
+                    var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                    xmlDoc.async="false";
+                    xmlDoc.loadXML(text);
+                }catch(e){
+                    try{
+                        var parser=new DOMParser();
+                        xmlDoc=parser.parseFromString(text,"text/xml");
+                    }catch(e) {
+                	    alert(e.message);
+                    }
+                }  
+                var user_info=xmlDoc.getElementsByTagName("user")[0]; 
+                var txt=write_user_info(user_info);
+                $("#content-on-right").html(txt);
+            }
+	    }
+
+	</script>
+
+</head>
+<body onload="write_header();write_footer();get_user_info()">
+	<header>
+	</header>
+
+	<div class="main">
+		<div class="row">
+			<div class="col s12 l3">
+				<ul class="collection with-header">
+					<li class="collection-header">
+						<h4 id="username"></h4>
+					</li>
+					<a href="#!"class="collection-item" onclick="get_user_info()">个人资料</a>
+					<a href="#!"class="collection-item" onclick="get_user_collect_docs()">我的收藏</a>
+					<a href="#!"class="collection-item" onclick="get_user_upload_docs()">我的上传</a>
+					<a href="#!"class="collection-item" onclick="get_user_download_docs()">我的下载</a>
+				</ul>
+			</div>
+			<div class="col s12 l9" id="content-on-right">
+			</div>
+		</div>
+	</div>
+
+
+    <div id="footer">
+    </div>
+
+
+</body>
+</html>

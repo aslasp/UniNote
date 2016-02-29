@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1.0"/>
+	<title>list</title>
+
+	<!-- CSS  -->
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+	<link href="css/style.css" type="text/css" rel="stylesheet" media="screen,projection"/>
+
+	<style type="text/css">
+    input{
+      max-width: 80%;
+    }
+    .btn{
+      max-width: 30%;
+    }
+	.row{
+	  margin-left: 9%;
+	  margin-right: 9%;
+	}
+	img{
+		max-width: 42px;
+		padding: 0;
+	}
+	label {
+		margin: 5px;
+	}
+	</style>
+
+	<!--  Scripts-->
+	<script src="js/jQuery.js"></script>
+	<script src="js/materialize.js"></script>
+	<script src="js/writeHTML.js"></script>
+	<script src="js/xmlhttp.js"></script>
+	<script src="js/cookie.js"></script>
+	<script src="js/LoginAjax.js"></script>
+
+	<script type="text/javascript">
+
+	    var page_num=1;
+	    var start=1;
+	    var end=1;
+	    var active_num=1;
+	    var department="all";
+	    var course="all";
+
+	    
+	    function turn_to_page(select_page){
+            active_num=parseInt(select_page);
+                if(active_num-2>=1){
+                	start=active_num-2;
+                }else{
+                	start=1;
+                }
+                if(active_num+2<=page_num){
+                	end=active_num+2;
+                }else{
+                	end=page_num;
+                }
+                write_pagination(start,end,active_num,page_num);
+                get_documents_by_course(department,course,active_num);  
+	    	}
+
+	    function page_up(current_page){
+	    	if(current_page>1){
+	    		turn_to_page(current_page-1);
+	    	}	
+	    }
+
+	    function page_down(current_page){
+	    	if(current_page<page_num){
+	    		turn_to_page(current_page+1);
+	    	}
+	    }
+	   
+
+	    function get_page_num(department_chosen,course_chosen){
+	    	var school=$('#university-info').attr('title');
+            department=department_chosen;
+            course=course_chosen;
+            var xmlhttp=getXmlHttp();
+            if(xmlhttp!=null){
+            	xmlhttp.onreadystatechange=function(){on_page_num_response(xmlhttp)};
+            	xmlhttp.open("GET","/UniNote/GetPageNumServlet?school="+school+"&department="+department_chosen+"&course="+course_chosen);
+            	xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            	xmlhttp.send();
+            }
+	    }
+
+	    function on_page_num_response(xmlhttp){
+	    	if(xmlhttp.readyState==4 && xmlhttp.status==200){
+	    		page_num=xmlhttp.responseText;
+	    		if(page_num<=5){
+	    			start=1;
+	    			end=page_num;
+	    		}else{
+                    start=1;
+                    end=5;
+	    		}
+	    		active_num=1;
+	    		write_pagination(start,end,active_num,page_num);	 //初始化页码
+                get_documents_by_course(department,course,1);  //请求第一页
+	    	}
+	    }
+
+		function get_course_list(xmlhttp_course){
+			 if (xmlhttp_course.readyState==4 && xmlhttp_course.status==200){
+                //file_elements是一个数组
+                var text=xmlhttp_course.responseText;
+            try{
+                var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                xmlDoc.async="false";
+                xmlDoc.loadXML(text);
+            }catch(e){
+                try{
+                    var parser=new DOMParser();
+                    xmlDoc=parser.parseFromString(text,"text/xml");
+                }catch(e) {
+            	    alert(e.message);
+                }
+            }
+            var departments=xmlDoc.getElementsByTagName("department");
+            var txt=write_course_list(departments,0);
+            $("#course_list").html(txt);
+            }
+		}
+
+		function get_documents_by_course(department_chosen,course_chosen,current_page){
+			var school=$('#university-info').attr('title');
+			var nickname=$("#user-name").attr("title");
+            var xmlhttp=getXmlHttp();
+            if(xmlhttp!=null){
+                xmlhttp.open('GET','/UniNote/DocumentOverViewServlet?school='+school+'&department='+department_chosen+
+                    '&course='+course_chosen+'&nickname='+nickname+"&page="+current_page,true);
+                xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xmlhttp.onreadystatechange=function(){onResponse(xmlhttp)};
+                xmlhttp.send();
+            }else{
+                alert('Your browser does not support XMLHttpRequest.');
+            } 
+        }
+
+	    function onResponse(xmlhttp){
+  	   	    if (xmlhttp.readyState==4 && xmlhttp.status==200){
+                //file_elements是一个数组
+                var text=xmlhttp.responseText;
+            try{
+                var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                xmlDoc.async="false";
+                xmlDoc.loadXML(text);
+            }catch(e){
+                try{
+                    var parser=new DOMParser();
+                    xmlDoc=parser.parseFromString(text,"text/xml");
+                }catch(e) {
+            	    alert(e.message);
+                }
+            }
+                var file_elements=xmlDoc.getElementsByTagName("document"); 
+                var txt=write_document_list(file_elements);
+                $("#filelist").html(txt);
+            }
+	    }
+
+	    function init_left_list(){
+	    	var xmlhttp_course=getXmlHttp();
+	    	var school=$('#university-info').attr('title');
+            if(xmlhttp_course!=null){
+            	xmlhttp_course.open("GET","/UniNote/CategoryServlet?school="+encodeURI(encodeURI(school)),true);
+            	xmlhttp_course.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            	xmlhttp_course.onreadystatechange=function(){get_course_list(xmlhttp_course)};
+            	xmlhttp_course.send();
+            }else{
+            	alert("Your browser does not support XMLHttpRequest.");
+            }
+	    }
+	  
+
+    function search_function(){
+    	var keyword=$("input[name='keyword']").val();
+    	var type;
+        var type_radio_pointers = document.querySelectorAll('[name="type"]');
+        for (var i=0; i<type_radio_pointers.length; i++){
+        	if(type_radio_pointers[i].checked){
+        		type=type_radio_pointers[i].value;
+        	}
+        } 
+    	var nickname;
+    	var login=check_cookie();
+    	if(!login){
+            nickname="undefined";
+    	}else{
+    		nickname=get_cookie("username");
+    	}
+    	var xmlhttp=getXmlHttp();
+    	if(xmlhttp!=null){
+            xmlhttp.onreadystatechange=function(){onSearchResponse(xmlhttp)};
+            xmlhttp.open("GET","/UniNote/SearchServlet?keyword="+keyword+"&type="+type+"&nickname="+nickname,true);
+            xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xmlhttp.send();
+    	}else{
+    		alert("Your browser does not support XMLHttpRequest");
+    	}
+    }
+
+    function onSearchResponse(xmlhttp){
+        if (xmlhttp.readyState==4 && xmlhttp.status==200){       
+            var text=xmlhttp.responseText;
+            try{
+                var xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+                xmlDoc.async="false";
+                xmlDoc.loadXML(text);
+            }catch(e){
+                try{
+                    var parser=new DOMParser();
+                    xmlDoc=parser.parseFromString(text,"text/xml");
+                }catch(e) {
+            	    alert(e.message);
+                }
+            }
+            var file_elements=xmlDoc.getElementsByTagName("document"); 
+            var txt=write_document_list(file_elements);
+            $("#filelist").html(txt);
+        }
+    }
+	</script>
+
+</head>
+<body onload='write_header();write_footer();get_page_num("all","all");init_left_list()'>
+
+	<header></header>
+
+	<div class="main container">
+		<div class="row">
+			<!-- 左边l4 -->
+			<div class="col s12 l4">
+				<br />
+				<h4>选择课程</h4>
+				<!--左边的内容-->
+				<div id="course_list"></div>
+				<!-- 左边l4END -->
+			</div>
+			<!-- 右边l8 -->
+			<div class="col s12 l8">
+				<br />
+				<br />
+				<div>
+					<input type="text"  name="keyword" onkeydown='if(event.keyCode==13){search_function()}'>
+					<a class="btn btn-primary" onclick="search_function()">搜索</a>
+					<div>
+
+						<input type="radio" name="type" id="uploader" value="uploader">
+						<label for="uploader">上传者</label>
+						<input type="radio" name="type" id="customName" value="customName" checked="checked">
+						<label for="customName">文件名</label>
+						<input type="radio" name="type" id="tag" value="tag">
+						<label for="tag">标签</label>
+					</div>
+				</div>
+				<br />
+				<div>
+					<ul class="collection" id="filelist"></ul>
+				</div>
+
+				<div class="bdsharebuttonbox">
+					<a href="#" class="bds_more" data-cmd="more">分享到：</a>
+					<a href="#" class="bds_tsina" data-cmd="tsina" title="分享到新浪微博">新浪微博</a>
+					<a href="#" class="bds_weixin" data-cmd="weixin" title="分享到微信">微信</a>
+					<a href="#" class="bds_sqq" data-cmd="sqq" title="分享到QQ好友">QQ好友</a>
+					<a href="#" class="bds_douban" data-cmd="douban" title="分享到豆瓣网">豆瓣网</a>
+					<a href="#" class="bds_qzone" data-cmd="qzone" title="分享到QQ空间">QQ空间</a>
+					<a href="#" class="bds_renren" data-cmd="renren" title="分享到人人网">人人网</a>
+					<a href="#" class="bds_copy" data-cmd="copy" title="分享到复制网址">复制网址</a>
+				</div>
+				<script>window._bd_share_config={"common":{"bdSnsKey":{},"bdText":"分享自uniNOTE的文档:","bdMini":"2","bdMiniList":false,"bdPic":"","bdStyle":"1","bdSize":"16"},"share":{"bdSize":16}};with(document)0[(getElementsByTagName('head')[0]||body).appendChild(createElement('script')).src='http://bdimg.share.baidu.com/static/api/js/share.js?v=89860593.js?cdnversion='+~(-new Date()/36e5)];</script>
+				<div>
+					<ul class="pagination">
+						<li class="disabled">
+							<a href="#!"> <i class="material-icons">chevron_left</i>
+							</a>
+						</li>
+						<li class="waves-effect">
+							<a href="#!"> <i class="material-icons">chevron_right</i>
+							</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<!-- 右边l8END -->
+		</div>
+	</div>
+	<!--main container-->
+
+	<div id="footer"></div>
+
+</body>
+</html>
